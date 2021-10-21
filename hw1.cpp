@@ -1,6 +1,6 @@
 #include<iostream>
 #include<getopt.h>
-#include <chrono>
+#include<chrono>
 #include<sys/stat.h>
 
 using namespace std;
@@ -95,17 +95,17 @@ int KMP(string pattern, string text)
     return -1;
 }
 
-void good_suffix_1(int *shift, int *bpos, string pat, int m)
+void good_suffix_1(int *shift, int *bpos, string pattern)
 {
-    int i=m, j=m+1;
-    bpos[i]=j;
+    size_t pattern_length = pattern.length();
+    int i = pattern_length;
+    int j = pattern_length + 1;
+    bpos[i] = j;
   
-    while(i>0)
-    {
-        while(j<=m && pat[i-1] != pat[j-1])
-        {
-            if (shift[j]==0)
-                shift[j] = j-i;
+    while(i>0){
+        while(j<=pattern_length && pattern[i-1] != pattern[j-1]){
+            if (shift[j] == 0)
+                shift[j] = j - i;
             j = bpos[j];
         }
         i--;
@@ -114,15 +114,15 @@ void good_suffix_1(int *shift, int *bpos, string pat, int m)
     }
 }
 
-void good_suffix_2(int *shift, int *bpos, string pat, int m)
+void good_suffix_2(int *shift, int *bpos, string pattern)
 {
+    size_t pattern_length = pattern.length();
     int i, j;
     j = bpos[0];
-    for(i=0; i<=m; i++)
-    {
-        if(shift[i]==0)
+    for(i = 0; i <= pattern_length; i++){
+        if(shift[i] == 0)
             shift[i] = j;
-        if (i==j)
+        if (i == j)
             j = bpos[j];
     }
 }
@@ -139,8 +139,8 @@ int BM(string pattern, string text)
     for(int i=0;i<pattern_length+1;i++) 
         shift[i]=0;
   
-    good_suffix_1(shift, bpos, pattern, pattern_length);
-    good_suffix_2(shift, bpos, pattern, pattern_length);
+    good_suffix_1(shift, bpos, pattern);
+    good_suffix_2(shift, bpos, pattern);
   
     while(s <= text_length-pattern_length)
     {
