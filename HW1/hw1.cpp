@@ -9,8 +9,9 @@ size_t comparison_bf;
 size_t comparison_kmp;
 size_t comparison_bm;
 
-//g++ hw1.cpp && ./a.out -i text.fa -o pat.fa -a A
-
+/*
+g++ hw1.cpp && ./a.out -i text.fa -o pat.fa -a A
+*/
 // BM is working from the end to beginning 
 // Should be fixed!!!
 
@@ -102,8 +103,8 @@ void good_suffix_1(int *shift, int *bpos, string pattern)
     int j = pattern_length + 1;
     bpos[i] = j;
   
-    while(i>0){
-        while(j<=pattern_length && pattern[i-1] != pattern[j-1]){
+    while(i > 0){
+        while(j <= pattern_length && pattern[i-1] != pattern[j-1]){
             if (shift[j] == 0)
                 shift[j] = j - i;
             j = bpos[j];
@@ -136,19 +137,24 @@ int BM(string pattern, string text)
   
     int bpos[pattern_length+1], shift[pattern_length+1];
   
-    for(int i=0;i<pattern_length+1;i++) 
-        shift[i]=0;
+    for(int i = 0; i < pattern_length+1; i++) 
+        shift[i] = 0;
   
     good_suffix_1(shift, bpos, pattern);
+    for(int i = 0; i < pattern_length+1; i++){
+        cout<<shift[i]<<" ";
+    }cout<<endl;
     good_suffix_2(shift, bpos, pattern);
+    for(int i = 0; i < pattern_length+1; i++){
+        cout<<shift[i]<<" ";
+    }cout<<endl;
   
-    while(s <= text_length-pattern_length)
-    {
+    while(s <= text_length-pattern_length){
         j = pattern_length-1;
         while(j >= 0 && pattern[j] == text[s+j] && ++comparison_bm){
             j--;
         }
-        if (j<0)
+        if (j < 0)
         {
             return s;
         }
@@ -171,12 +177,23 @@ char* fasta_reader(char* file_adr)
     char* data = (char *) malloc(sb.st_size);
     char letter = 'a';
     int i, j;
+    bool read = true;
     for(i = 0, j = 0; i < sb.st_size; i++, j++){
         fscanf(in_file, "%c", &letter);
-        if(letter != '\n')
+        if(letter == '>'){
+            read = false;
+            j = j==0 ?-1 :j-1;
+        }
+        else if(letter == '\n'){
+            read = true;
+            j = j==0 ?-1 :j-1;
+        }
+        else if(read){
             data[j] = letter;
-        else
-            j--;
+        }
+        else{
+            j = j==0 ?-1 :j-1;
+        }
     }
     length = sb.st_size - (i - j);
     return data;
