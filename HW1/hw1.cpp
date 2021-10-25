@@ -224,6 +224,10 @@ int main(int argc, char * argv[])
     char* pattern_file_adr = NULL;
     char* method = NULL;
     int c;
+    if(argc == 1){
+        printf("This program requires arguments!\n");
+        exit(-1);
+    }
     while ((c = getopt(argc, argv, "i:o:a:")) != -1){
         switch (c){
             case 'i':
@@ -235,6 +239,8 @@ int main(int argc, char * argv[])
             case 'a':
                 method = optarg;
                 break;
+            default:
+                exit(-1);
         }
     }
     char* pattern = fasta_reader(pattern_file_adr);
