@@ -14,10 +14,8 @@ size_t comparison_kmp;
 size_t comparison_bm;
 
 /*
-g++ hw1.cpp && ./a.out -i text.fa -o pat.fa -a A
+g++ -std=c++11 -o a.out hw1.cpp && ./a.out -i text.fa -o pat.fa -a A
 */
-// BM is working from the end to beginning 
-// Should be fixed!!!
 
 int brute_force(string pattern, string text)
 {
@@ -120,34 +118,33 @@ int* good_suffix(string pattern)
 	size_t len = pattern.length();
     int i = len;
     int j = len + 1;
-    // vector<int> bpos(len+1), shifts(len+1,0); 
 	int* bpos = new int[len+1];
-    int* shifts = new int[len+1];
+    int* shift = new int[len+1];
     for(int k = 0; k <= len; k++){
-        shifts[k] = 0;
+        shift[k] = 0;
     } 
 	bpos[i]= j;
-	while(i> 0)  
+	while(i > 0)  
 	{
-		while( j<=len && pattern[i-1]!= pattern[j-1])
+		while(j <= len && pattern[i-1] != pattern[j-1])
 		{
-			if(shifts[j]==0)
-				shifts[j] = j-i;
+			if(shift[j] == 0)
+				shift[j] = j - i;
 			j = bpos[j]; 
 		}
-		i--;
-		j--;
+		j -= 1;
+		i -= 1;
 		bpos[i] = j;
 	}
 	j = bpos[0];
 	for(i=0; i<=len; i++)
 	{
-		if(shifts[i] == 0)
-			shifts[i] = j;
+		if(shift[i] == 0)
+			shift[i] = j;
 		if(i == j)
 			j = bpos[j];
 	}
-	return shifts;
+	return shift;
 }	
 
 int BM(string pattern, string text)
@@ -159,8 +156,8 @@ int BM(string pattern, string text)
     int text_length = text.length();
     int badShift, goodShift;
     int* badChars = bad_char(pattern);
-    int* shifts = good_suffix(pattern);
-    shifts[0] = 0;
+    int* shift = good_suffix(pattern);
+    shift[0] = 0;
     while(i <= text_length - pattern_length){
         j = pattern_length - 1;
         while(j >= 0 && ++comparison_bm && pattern[j] == text[i+j]){
@@ -174,7 +171,7 @@ int BM(string pattern, string text)
             letter = letter>>1;
             letter = letter & 0b00000011;
             badShift = MAX(1, j-badChars[letter]);
-            goodShift = shifts[0];
+            goodShift = shift[0];
             i += MAX(badShift, goodShift);
         }
     }
@@ -182,7 +179,10 @@ int BM(string pattern, string text)
 }
 
 void write_result(string method_name, int index, int comp_num, double runtime){
-    printf("%s:\npattern was found in query file at position %d.\n%d  character comparisons performed .\nRun time was %f ms .\n\n", method_name.c_str(), index, comp_num, runtime);
+    if(index == 0)
+        printf("%s:\nPattern not found in the given string.\n%d character comparisons performed .\nRun time was %f ms .\n\n", method_name.c_str(), comp_num, runtime);
+    else
+        printf("%s:\npattern was found in query file at position %d.\n%d  character comparisons performed .\nRun time was %f ms .\n\n", method_name.c_str(), index, comp_num, runtime);
 }
 
 char* fasta_reader(char* file_adr)
@@ -216,6 +216,37 @@ char* fasta_reader(char* file_adr)
     return data;
 }
 
+void print_best(double runtime_bf, double runtime_kmp, double runtime_bm)
+{
+    int smallest = comparison_bf;
+    char res;
+    if(comparison_bf != comparison_bm && comparison_bf != comparison_kmp && comparison_kmp != comparison_bm)
+        res = comparison_bf < comparison_bm ?(comparison_bf < comparison_kmp ?'f' :'m') :(comparison_bm < comparison_kmp ?'m' :'k');
+    else if(comparison_bf == comparison_bm && comparison_bm == comparison_kmp)
+        res = runtime_bf < runtime_bm ?(runtime_bf < runtime_kmp ?'f' :'m') :(runtime_bm < runtime_kmp ?'m' :'k');
+    else if(comparison_bf == comparison_bm)
+        if(comparison_kmp > comparison_bf)
+            res = runtime_bf < runtime_bm ?'f' :'m';
+        else
+            res = comparison_bf < comparison_bm ?(comparison_bf < comparison_kmp ?'f' :'m') :(comparison_bm < comparison_kmp ?'m' :'k');
+    else if(comparison_bm == comparison_kmp)
+        if(comparison_bf > comparison_kmp)
+            res = runtime_bm < runtime_kmp ?'m' :'k';
+        else
+            res = comparison_bf < comparison_bm ?(comparison_bf < comparison_kmp ?'f' :'m') :(comparison_bm < comparison_kmp ?'m' :'k');
+    else
+        if(comparison_bm > comparison_bf)
+            res = runtime_bf < runtime_kmp ?'f' :'k';
+        else
+            res = comparison_bf < comparison_bm ?(comparison_bf < comparison_kmp ?'f' :'m') :(comparison_bm < comparison_kmp ?'m' :'k');
+    if(res == 'f')
+        printf("Brute-Force");
+    else if(res == 'm')
+        printf("Boyer-Moore");
+    else
+        printf("Knuth-Morris-Pratt");
+}
+
 int main(int argc, char * argv[])
 {
     typedef chrono::high_resolution_clock timer;
@@ -224,8 +255,8 @@ int main(int argc, char * argv[])
     char* pattern_file_adr = NULL;
     char* method = NULL;
     int c;
-    if(argc == 1){
-        printf("This program requires arguments!\n");
+    if(argc < 7){
+        printf("This program requires more arguments!\n");
         exit(-1);
     }
     while ((c = getopt(argc, argv, "i:o:a:")) != -1){
@@ -263,20 +294,7 @@ int main(int argc, char * argv[])
         write_result("Knuth-Morris-Pratt", index_kmp, comparison_kmp, runtime_kmp.count());
         write_result("Boyer-Moore", index_bm, comparison_bm, runtime_bm.count());
         printf("The best algorithm was ");
-        if(comparison_bf < comparison_kmp){
-            if(comparison_bf < comparison_bm){
-                printf("Brute Force.");
-            }
-            else{
-                printf("Boyer-Moore.");
-            }
-        }
-        else if(comparison_bm < comparison_kmp){
-            printf("Boyer-Moore.");
-        }
-        else{
-            printf("Knuth-Morris-Pratt.");
-        }
+        print_best(runtime_bf.count(), runtime_kmp.count(), runtime_bm.count());
     }
 
     if(method[0] == 'B' && method[1] == 'F'){

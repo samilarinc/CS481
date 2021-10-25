@@ -1,2 +1,2 @@
 all:
-	g++ -o a.out hw1.cpp
+	g++ -std=c++11 -o a.out hw1.cpp
