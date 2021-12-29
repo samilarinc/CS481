@@ -28,7 +28,7 @@ fasta.close()
 seqs = []
 aln_file = open(aln_address, 'r')
 for i in aln_file:
-    seqs.append(i.strip().split(' ')[1])
+    seqs.append(i.strip().split('\t')[1])
 aln_file.close()
 
 freqs = np.zeros((5,len(seqs[0])))
